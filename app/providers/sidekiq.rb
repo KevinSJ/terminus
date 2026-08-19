@@ -5,7 +5,11 @@ module Terminus
   module Providers
     # The Sidekiq provider.
     class Sidekiq < Hanami::Provider::Source
-      include Deps[:logger]
+      include Deps[
+        :logger,
+        "aspects.jobs.schedule",
+        extension_repository: "repositories.extension"
+      ]
 
       RESOLVER = proc { Object.const_get "Sidekiq" }
 
@@ -53,6 +57,11 @@ module Terminus
 
       # simplecov:disable
       def load_schedule
+        load_static_schedule
+        load_extension_schedule
+      end
+
+      def load_static_schedule
         jobs = YAML.load_file slice.root.join("config/sidekiq_scheduler.yml")
 
         jobs.each do |schedule_name, options|
@@ -61,6 +70,12 @@ module Terminus
           Object.const_get(job_name).perform_in 0
         rescue NameError, TypeError
           logger.error { "Unable to initialize job: #{job_name}." }
+        end
+      end
+
+      def load_extension_schedule
+        extension_repository.all.each do |extension|
+          schedule.upsert(*extension.to_schedule)
         end
       end
       # simplecov:enable
