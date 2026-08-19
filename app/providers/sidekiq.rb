@@ -51,10 +51,6 @@ module Terminus
         # simplecov:enable
       end
 
-      def sidekiq
-        @sidekiq ||= resolver.call
-      end
-
       # simplecov:disable
       def load_schedule
         load_static_schedule
@@ -79,6 +75,10 @@ module Terminus
         end
       end
       # simplecov:enable
+
+      def sidekiq
+        @sidekiq ||= resolver.call
+      end
     end
   end
 end
